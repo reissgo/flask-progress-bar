@@ -17,6 +17,8 @@
     </form>
     <button id="go" onclick="function_called_when_user_clicks_go();" >Go! </button>
 
+	<div id="jah"></div>
+
     <progress id="prog_id" value="0" max="100"></progress>
 
     <img style="display:block" />
@@ -26,7 +28,6 @@
 height: 400px;
 font-size: 10px;
 width: 820px;
-border: 1px solid #ccc;
 color: #ffffff;
 background-color: #000000;
 overflow: auto;
@@ -87,6 +88,10 @@ display: flex; flex-direction: column-reverse;
 			   //var progressBarEl = document.getElementsByTagName("progress")[0];
 			   var progressBarEl = document.getElementById("prog_id");
 			   progressBarEl.value=result["progress"];
+
+			   var jobsahead = document.getElementById("jah");
+			   jobsahead.innerHTML=result["jobsaheadofus"];
+
 
 			   var diagboxvar = document.getElementById("diag_id");
 			   diagboxvar.innerHTML=result["diagstring"];

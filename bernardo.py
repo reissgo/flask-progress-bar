@@ -17,23 +17,25 @@ global_diagnostic_strings = "START<br>"
 ### You create a Queue and start a scheduler, Start flask after that
 def run_scheduler(app):
     global global_diagnostic_strings
-    sleep_time = 2
+    sleep_time = 1.5
     while True:
         time.sleep(sleep_time)
         print('jobs Completed ->',app.jobs_completed)
 
         if app.jobs_to_be_processed_queue.qsize() > 0:
             print(f"qsize={app.jobs_to_be_processed_queue.qsize()}")
+            global_diagnostic_strings += "queue size = "+str(app.jobs_to_be_processed_queue.qsize()) + "<br>"
             next_job_name = app.jobs_to_be_processed_queue.get()
             print(f"No jobs being processed so scheduler will start processing the next image {next_job_name} from the queue")
             app.function_to_actually_crunch_the_numbers(next_job_name, app)
         else:
+            global_diagnostic_strings += "queue size = "+str(app.jobs_to_be_processed_queue.qsize()) + "<br>"
             print("Pass")
             pass
 
 def function_to_actually_crunch_the_numbers(job_name, app):
     global global_diagnostic_strings
-    huge_number = 5
+    huge_number = 8
 
     for i in range(huge_number):
         # some maths
@@ -53,12 +55,12 @@ def function_to_actually_crunch_the_numbers(job_name, app):
     app.jobs_completed[job_name] = {"status":1,"file": chunk_of_ram}
     print(f"IC from function: {app.jobs_completed} **************************")
 
-    if app.job_processing_status_dict.get("total_num_jobs",False):
-        global_diagnostic_strings += "app.job_processing_status_dict['total_num_jobs'] incremented from "+str(app.job_processing_status_dict["total_num_jobs"])+"<br>"
-        app.job_processing_status_dict["total_num_jobs"] += 1
+    if app.job_processing_status_dict.get("num_jobs_completed",False):
+        global_diagnostic_strings += "app.job_processing_status_dict['num_jobs_completed'] incremented from "+str(app.job_processing_status_dict["num_jobs_completed"])+"<br>"
+        app.job_processing_status_dict["num_jobs_completed"] += 1
     else:
-        app.job_processing_status_dict["total_num_jobs"] = 1
-        global_diagnostic_strings += "app.job_processing_status_dict['total_num_jobs'] being set to 1<br>"
+        app.job_processing_status_dict["num_jobs_completed"] = 1
+        global_diagnostic_strings += "app.job_processing_status_dict['num_jobs_completed'] being set to 1<br>"
 
     del app.job_processing_status_dict[job_name]     # The del keyword is used to delete objects. 
 
@@ -114,7 +116,7 @@ def render_basic_whole_webpage():
                                 queue_size = flask.current_app.jobs_to_be_processed_queue.qsize(),
                                 max_queue_size = flask.current_app.queue_MAXSIZE ,
                                 being_processed = len(flask.current_app.active_processing_threads),
-                                total = flask.current_app.job_processing_status_dict.get("total_num_jobs",0),
+                                total = flask.current_app.job_processing_status_dict.get("num_jobs_completed",0),
                                 start_time = flask.current_app.start_time,
                                 distr = global_diagnostic_strings,
                                 defid=id_for_hidden_thing)
@@ -123,19 +125,19 @@ def render_basic_whole_webpage():
 def server_process_request_to_begin_crunching():
     global global_diagnostic_strings
     global id_read_from_form
-    image_name = json.loads(request.data)["image_name"]
+    job_name = json.loads(request.data)["image_name"]
     print("request.data=",request.data)
     customer_id = json.loads(request.data)["CustId"]
 
-    # image_name += str(customer_id) # just to ensure image name is different for each user
-
     global_diagnostic_strings += "server_process_request_to_begin_crunching() "+str(customer_id)+"<br>"
 
-    if(flask.current_app.jobs_to_be_processed_queue.qsize() >= flask.current_app.queue_MAXSIZE ):
+    if (flask.current_app.jobs_to_be_processed_queue.qsize() >= flask.current_app.queue_MAXSIZE ):
         while(not flask.current_app.jobs_to_be_processed_queue.empty()):
             flask.current_app.jobs_to_be_processed_queue.get()
-    requestedImage_status = {"name":image_name, "id":uuid.uuid1(), "diagstring": global_diagnostic_strings}
-    flask.current_app.jobs_to_be_processed_queue.put(image_name)
+
+    requestedImage_status = {"name":job_name, "id":uuid.uuid1(), "diagstring": global_diagnostic_strings}
+
+    flask.current_app.jobs_to_be_processed_queue.put(job_name)
     return flask.jsonify(requestedImage_status)
 
 @app.route("/get_progress",methods=["POST"])
@@ -145,14 +147,14 @@ def server_asked_to_return_progress():
     print(f'Current job being processed: {flask.current_app.job_processing_status_dict}')
     print(f'Current jobs completed: {flask.current_app.jobs_completed}')
     image_name = json.loads(request.data)["image_name"]
-    is_finished = flask.current_app.jobs_completed \
-                                   .get(image_name,{"status":0,"file": ''})["status"]
+    is_finished = flask.current_app.jobs_completed.get(image_name,{"status":0,"file": ''})["status"]
     customer_id = json.loads(request.data)["CustId"]
     global_diagnostic_strings += "server_asked_to_return_progress() in="+image_name+" cud="+str(customer_id)+" prog="+flask.current_app.job_processing_status_dict.get(image_name,"0")+"<br>"
     requestedImage_status = {
             "is_finished": is_finished,
             "progress":    flask.current_app.job_processing_status_dict.get(image_name,"0"),
-            "diagstring": global_diagnostic_strings
+            "diagstring": global_diagnostic_strings,
+			"jobsaheadofus":app.jobs_to_be_processed_queue.qsize()
             }
     return flask.jsonify(requestedImage_status) #job_processing_status_dict[image_name]})
 
