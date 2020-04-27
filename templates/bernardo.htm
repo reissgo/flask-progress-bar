@@ -1,0 +1,143 @@
+<html>
+<head>
+</head>
+<body>
+<FONT FACE="Arial">
+    When the page was loaded there were {{queue_size}} images on the queue to be processed, and {{being_processed}} images being processed</p>
+    The max size of the queue is {{max_queue_size}}, and it will be reseted when reaches it</p>
+    A total of {{total}} images were processed since the server was started at {{start_time}}</p>
+
+
+	<p>You are user number {{defid}}</p>
+
+    <form id="myform">
+      <label for="name">Image name:</label><br>
+      <input id="input1" type="text" id="name" name="name" value="ImageName{{defid}}" required><br>
+      <input id="hidden_input" type="hidden"   id="CustId" name="CustId" value="{{defid}}"><br>
+    </form>
+    <button onclick="function_called_when_user_clicks_go();" >Go! </button>
+
+    <progress id="prog_id" value="0" max="100"></progress>
+
+    <img style="display:block" />
+
+<hr>
+<div id = "diag_id" style="
+height: 300px;
+width: 820px;
+border: 1px solid #ccc;
+color: #ffffff;
+background-color: #000000;
+overflow: auto;
+display: flex; flex-direction: column-reverse;
+">
+{% autoescape false %}{{distr}}{% endautoescape %}
+</div>
+
+
+
+
+    <script>
+       window.image_name = "";
+       window.requests = "";
+
+       function function_called_when_user_clicks_go()
+	   {
+           var myformthing = document.getElementById("myform");
+           var input = document.getElementById("input1");
+           var hid_in = document.getElementById("hidden_input");
+           var RegEx = /^[a-zA-Z0-9]+$/;
+           var Valid = RegEx.test(input.value);
+
+           if (Valid)
+		   {
+				window.image_name = input.value;
+
+				// xhttp is an XMLHttpRequest thingy which is for the client to request info from the server
+				var xhttp = new XMLHttpRequest();
+
+				xhttp.onload =  function()
+								{
+									result=JSON.parse(xhttp.response)
+									window.requests = setTimeout(check_image_progress, 500);
+								};
+
+				// AFAICT these next two lines will effectively launch the time consuming process by virtue of calling the /begin_crunching handler in flask python code
+				xhttp.open("POST", "/begin_crunching", true);
+				xhttp.send(JSON.stringify({"image_name":input.value,"CustId":hid_in.value}));
+
+				// the following three lines appear to disable anything of type button!
+				//var buttonEl = document.getElementsByTagName("button")[0];
+				//buttonEl.disabled = true;
+				//buttonEl.innerHTML = "Image sent to process;only one image per session allowed";
+           }
+           else
+		   {
+               alert("input not valid, only alphanumeric characters");
+           }
+        }
+
+       function check_image_progress()
+	   {
+			var hid_in = document.getElementById("hidden_input");
+           var xhttp = new XMLHttpRequest();
+           xhttp.onload = function()
+		   {
+			   result=JSON.parse(xhttp.response)
+			   //var progressBarEl = document.getElementsByTagName("progress")[0];
+			   var progressBarEl = document.getElementById("prog_id");
+			   progressBarEl.value=result["progress"];
+
+			   var diagboxvar = document.getElementById("diag_id");
+			   diagboxvar.innerHTML=result["diagstring"];
+
+			   if (result["is_finished"] == true)
+			   {
+					clearTimeout(window.requests);
+					window.requests = setTimeout(get_image,5);
+			   }
+			   else
+			   {
+					// if not finished then go round again
+					window.requests = setTimeout(check_image_progress, 500);
+			   }
+           };
+           xhttp.open("POST", "/get_progress", true);
+           xhttp.send(JSON.stringify({"image_name":window.image_name,"CustId":hid_in.value}));
+        }
+
+       function get_image()
+	   {
+			var hid_in = document.getElementById("hidden_input");
+			var xhttp = new XMLHttpRequest();
+
+           xhttp.onload = function()
+		   {
+			   result=JSON.parse(xhttp.response)
+			   img_base64 = result[window.image_name];
+			   var progressBarEl = document.getElementsByTagName("progress")[0];
+			   progressBarEl.value=100;
+
+			   var diagboxvar = document.getElementById("diag_id");
+			   diagboxvar.innerHTML=result["diagstring"];
+
+			   clearTimeout(window.requests);
+			   var imgEl = document.getElementsByTagName("img")[0];
+			   console.log(result)
+			   imgEl.src = 'data:image/jpeg;base64,'+img_base64;
+           };
+
+           xhttp.open("POST", "/get_image", true);
+           xhttp.send(JSON.stringify({"image_name":window.image_name,"CustId":hid_in.value}));
+        }
+
+		//setTimeout(function() { document.getElementsByTagName("button")[0].disabled=false; }, 100);
+
+		function hexToBase64(str)
+		{
+			return btoa(String.fromCharCode.apply(null, str.replace(/\r|\n/g, "").replace(/([\da-fA-F]{2}) ?/g, "0x$1 ").replace(/ +$/, "").split(" ")));
+		}
+
+    </script>
+</body>
+</html>
