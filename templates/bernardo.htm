@@ -3,23 +3,17 @@
 </head>
 <body>
 <FONT FACE="Arial">
-    When the page was loaded there were {{queue_size}} images on the queue to be processed, and {{being_processed}} images being processed</p>
-    The max size of the queue is {{max_queue_size}}, and it will be reseted when reaches it</p>
-    A total of {{total}} images were processed since the server was started at {{start_time}}</p>
-
-
-	<p>You are user number {{defid}}</p>
+<h1>{{defid}}</h1>
 
     <form id="myform">
-      <label for="name">Image name:</label><br>
-      <input id="input1" type="text" id="name" name="name" value="ImageName{{defid}}" required><br>
+      <input id="input1" type="hidden" id="name" name="name" value="ImageName{{defid}}" required><br>
       <input id="hidden_input" type="hidden"   id="CustId" name="CustId" value="{{defid}}"><br>
     </form>
-    <button id="go" onclick="function_called_when_user_clicks_go();" >Go! </button>
+    <button id="go" onclick="function_called_when_user_clicks_go();" >Go!</button>
+	<progress id="prog_id" value="0" max="100"></progress>
 
-	<div id="jah"></div>
 
-    <progress id="prog_id" value="0" max="100"></progress>
+	<div id="qrep">report</div>
 
     <img style="display:block" />
 
@@ -89,8 +83,30 @@ display: flex; flex-direction: column-reverse;
 			   var progressBarEl = document.getElementById("prog_id");
 			   progressBarEl.value=result["progress"];
 
-			   var jobsahead = document.getElementById("jah");
-			   jobsahead.innerHTML=result["jobsaheadofus"];
+
+				var found = false;
+				var foundpos = -1;
+				var i;
+				for (i = 0;i < result["jobsaheadofus"];i++)
+				{
+						if (result["inqueue"][i] == window.image_name)
+						{
+							foundpos = i;
+							found = true;
+						}
+				}
+				var pos_in_queue = foundpos+1;
+
+				qreport = document.getElementById("qrep");
+				if (found)
+				{
+					qreport.innerHTML="There are "+pos_in_queue.toString()+" jobs ahead of us";
+				}
+				else
+				{
+					qreport.innerHTML="processing now";
+				}
+
 
 
 			   var diagboxvar = document.getElementById("diag_id");
@@ -131,6 +147,8 @@ display: flex; flex-direction: column-reverse;
 			   console.log(result)
 			   imgEl.src = 'data:image/jpeg;base64,'+img_base64;
 
+
+			   
 				var gobut = document.getElementById("go");
 				gobut.disabled = false;
 				gobut.innerHTML = "Go again?";

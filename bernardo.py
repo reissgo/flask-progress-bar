@@ -35,13 +35,13 @@ def run_scheduler(app):
 
 def function_to_actually_crunch_the_numbers(job_name, app):
     global global_diagnostic_strings
-    huge_number = 8
+    huge_number = 100
 
     for i in range(huge_number):
         # some maths
         percentage_done = str((i+1)*100/huge_number)
         app.job_processing_status_dict[job_name] = percentage_done
-        time.sleep(.5)
+        time.sleep(.2)
 
     app.job_processing_status_dict[job_name] = str(100.0)  # done!
 
@@ -146,6 +146,7 @@ def server_asked_to_return_progress():
 	
     print(f'Current job being processed: {flask.current_app.job_processing_status_dict}')
     print(f'Current jobs completed: {flask.current_app.jobs_completed}')
+    print("queue is: ",list(app.jobs_to_be_processed_queue.queue))
     image_name = json.loads(request.data)["image_name"]
     is_finished = flask.current_app.jobs_completed.get(image_name,{"status":0,"file": ''})["status"]
     customer_id = json.loads(request.data)["CustId"]
@@ -154,7 +155,8 @@ def server_asked_to_return_progress():
             "is_finished": is_finished,
             "progress":    flask.current_app.job_processing_status_dict.get(image_name,"0"),
             "diagstring": global_diagnostic_strings,
-			"jobsaheadofus":app.jobs_to_be_processed_queue.qsize()
+			"jobsaheadofus":app.jobs_to_be_processed_queue.qsize(),
+			"inqueue":list(app.jobs_to_be_processed_queue.queue)
             }
     return flask.jsonify(requestedImage_status) #job_processing_status_dict[image_name]})
 
