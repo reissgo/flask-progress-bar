@@ -54,9 +54,11 @@ def function_to_actually_crunch_the_numbers(job_name, app):
     print(f"IC from function: {app.jobs_completed} **************************")
 
     if app.job_processing_status_dict.get("total_num_jobs",False):
+        global_diagnostic_strings += "app.job_processing_status_dict['total_num_jobs'] incremented from "+str(app.job_processing_status_dict["total_num_jobs"])+"<br>"
         app.job_processing_status_dict["total_num_jobs"] += 1
     else:
         app.job_processing_status_dict["total_num_jobs"] = 1
+        global_diagnostic_strings += "app.job_processing_status_dict['total_num_jobs'] being set to 1<br>"
 
     del app.job_processing_status_dict[job_name]     # The del keyword is used to delete objects. 
 
