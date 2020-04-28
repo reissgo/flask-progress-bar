@@ -6,8 +6,8 @@
 <h1>{{defid}}</h1>
 
     <form id="myform">
-      <input id="input1" type="hidden" id="name" name="name" value="ImageName{{defid}}" required><br>
-      <input id="hidden_input" type="hidden"   id="CustId" name="CustId" value="{{defid}}"><br>
+      <input id="input1" type="hidden" id="name" name="name" value="ImageName{{defid}}" required>
+      <input id="hidden_input" type="hidden"   id="CustId" name="CustId" value="{{defid}}">
     </form>
     <button id="go" onclick="function_called_when_user_clicks_go();" >Go!</button>
 	<progress id="prog_id" value="0" max="100"></progress>
@@ -152,6 +152,10 @@ display: flex; flex-direction: column-reverse;
 				var gobut = document.getElementById("go");
 				gobut.disabled = false;
 				gobut.innerHTML = "Go again?";
+
+				var qs = document.getElementById("qrep");
+				
+				qs.innerHTML = "";
            };
 
            xhttp.open("POST", "/get_image", true);
